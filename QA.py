@@ -7,7 +7,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.faiss import FAISS
 import streamlit as st
 from langchain_core.documents import Document
-
+import os
+os.system('playwright install')
+os.system('playwright install-deps')
 def scrap_data(url):
     """Scrape data from the given URL."""
     loaders = AsyncChromiumLoader([url])
