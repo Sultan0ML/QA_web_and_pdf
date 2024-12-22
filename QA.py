@@ -6,27 +6,34 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.faiss import FAISS
 import streamlit as st
+from langchain_core.documents import Document
 
 def scrap_data(url):
     """Scrape data from the given URL."""
-    loaders = AsyncChromiumLoader([url])
+    loaders = AsyncChromiumLoader([url], user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
     docs = loaders.load()
 
     bs_transformer = BeautifulSoupTransformer()
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
 
-    return docs_transformed[0].page_content if docs_transformed else ""
+    # Return a list of Document objects
+    return [Document(page_content=doc.page_content) for doc in docs_transformed] if docs_transformed else []
 
-def store_in_vector_space(content):
+def store_in_vector_space(docs):
     """Store the scraped content in a vector database."""
     embeddings = OllamaEmbeddings(model="llama3.1")
 
-    # Split text into chunks
+    # Split the text into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = text_splitter.split_text(content)
+    chunks = []
+    for doc in docs:
+        chunks.extend(text_splitter.split_text(doc.page_content))
+
+    # Wrap each chunk into a Document object
+    documents = [Document(page_content=chunk) for chunk in chunks]
 
     # Create FAISS DB
-    vectorStore = FAISS.from_documents(documents=chunks, embedding=embeddings)
+    vectorStore = FAISS.from_documents(documents=documents, embedding=embeddings)
     vectorStore.save_local('faiss.index')
     
     return vectorStore
@@ -63,14 +70,14 @@ url = st.sidebar.text_input("Enter article URL")
 
 if url:
     with st.spinner("Scraping data from the URL..."):
-        content = scrap_data(url)
+        docs = scrap_data(url)
 
-    if content:
+    if docs:
         st.success("Data scraped successfully!")
         
         # Store in vector space
         with st.spinner("Storing data in vector space..."):
-            vector_db = store_in_vector_space(content)
+            vector_db = store_in_vector_space(docs)
 
         st.success("Data stored in vector space!")
 
