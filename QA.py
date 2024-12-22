@@ -12,10 +12,10 @@ import os
 
 os.system("playwright install")  # Make sure the necessary dependencies are installed
 
-async def scrap_data(url):
+def scrap_data(url):
     """Scrape data from the given URL."""
-    loaders = AsyncChromiumLoader([url], user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-    docs = await loaders.load()
+    loaders = AsyncChromiumLoader([url],user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+    docs = loaders.load()
 
     bs_transformer = BeautifulSoupTransformer()
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
