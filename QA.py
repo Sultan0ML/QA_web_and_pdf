@@ -1,3 +1,4 @@
+import asyncio
 from langchain_community.document_loaders import AsyncChromiumLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_ollama.llms import OllamaLLM
@@ -8,11 +9,13 @@ from langchain_community.vectorstores.faiss import FAISS
 import streamlit as st
 from langchain_core.documents import Document
 import os
-os.system("playwright install")
-def scrap_data(url):
+
+os.system("playwright install")  # Make sure the necessary dependencies are installed
+
+async def scrap_data(url):
     """Scrape data from the given URL."""
-    loaders = AsyncChromiumLoader([url],user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-    docs = loaders.load()
+    loaders = AsyncChromiumLoader([url], user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+    docs = await loaders.load()
 
     bs_transformer = BeautifulSoupTransformer()
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
@@ -71,25 +74,33 @@ url = st.sidebar.text_input("Enter article URL")
 
 if url:
     with st.spinner("Scraping data from the URL..."):
-        docs = scrap_data(url)
+        try:
+            docs = asyncio.run(scrap_data(url))
+        except Exception as e:
+            st.error(f"Error scraping data: {e}")
+            docs = []
 
     if docs:
         st.success("Data scraped successfully!")
         
         # Store in vector space
         with st.spinner("Storing data in vector space..."):
-            vector_db = store_in_vector_space(docs)
-
-        st.success("Data stored in vector space!")
+            try:
+                vector_db = store_in_vector_space(docs)
+                st.success("Data stored in vector space!")
+            except Exception as e:
+                st.error(f"Error storing data in vector space: {e}")
+                vector_db = None
 
         # User can ask questions
         question = st.text_input("Ask a question about the article")
 
-        if question:
+        if question and vector_db:
             with st.spinner("Generating response..."):
-                answer = ask_question(vector_db, question)
-
-            st.text_area("Answer", answer, height=200)
-
+                try:
+                    answer = ask_question(vector_db, question)
+                    st.text_area("Answer", answer, height=200)
+                except Exception as e:
+                    st.error(f"Error generating response: {e}")
     else:
         st.error("Failed to scrape the content. Please check the URL.")
