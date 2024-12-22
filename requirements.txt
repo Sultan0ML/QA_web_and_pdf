@@ -1,8 +1,6 @@
-streamlit
 langchain-community
-langchain-core
 langchain-ollama
+langchain-core
 langchain-text-splitters
-langchain-chroma
-chromadb[all]
-pysqlite3-binary
+langchain-community-vectorstores-faiss
+streamlit
