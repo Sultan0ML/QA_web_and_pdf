@@ -6,7 +6,6 @@ langchain-text-splitters
 langchain-chroma
 chromadb[all]
 pysqlite3-binary
-playwright
 libnss3
 libnspr4
 libatk1.0-0
