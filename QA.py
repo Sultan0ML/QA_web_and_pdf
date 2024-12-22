@@ -1,15 +1,11 @@
 from langchain_community.document_loaders import AsyncChromiumLoader
-from langchain_community.document_transformers import Html2TextTransformer, BeautifulSoupTransformer
+from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import PromptTemplate
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
+from langchain_community.vectorstores.faiss import FAISS
 import streamlit as st
-
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 def scrap_data(url):
     """Scrape data from the given URL."""
@@ -29,13 +25,11 @@ def store_in_vector_space(content):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     chunks = text_splitter.split_text(content)
 
-    # Create Chroma DB
-    chroma_db = Chroma(persist_directory="chroma_store", embedding_function=embeddings)
+    # Create FAISS DB
+    vectorStore = FAISS.from_documents(documents=chunks, embedding=embeddings)
+    vectorStore.save_local('faiss.index')
     
-    for i, chunk in enumerate(chunks):
-        chroma_db.add_texts([chunk], metadatas=[{"chunk_index": i}])
-    
-    return chroma_db
+    return vectorStore
 
 def ask_question(vector_db, query):
     """Answer user questions based on the vector database."""
@@ -64,8 +58,8 @@ def ask_question(vector_db, query):
 # Streamlit App
 st.title("Ask Questions from a Web Article")
 
-# Input URL
-url = st.text_input("Enter article URL")
+# Move URL input to sidebar
+url = st.sidebar.text_input("Enter article URL")
 
 if url:
     with st.spinner("Scraping data from the URL..."):
@@ -91,4 +85,3 @@ if url:
 
     else:
         st.error("Failed to scrape the content. Please check the URL.")
-
