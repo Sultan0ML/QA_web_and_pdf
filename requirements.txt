@@ -3,6 +3,7 @@ langchain-core
 langchain-ollama
 langchain-text-splitters
 langchain-chroma
+chromadb
 streamlit
 aiohappyeyeballs==2.3.5
 aiohttp==3.10.3
