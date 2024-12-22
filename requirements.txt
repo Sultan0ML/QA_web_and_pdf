@@ -7,4 +7,4 @@ langchain-chroma
 chromadb[all]
 pysqlite3-binary
 playwright
-playwright install
+playwright 
