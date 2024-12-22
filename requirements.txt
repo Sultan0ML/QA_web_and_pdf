@@ -1,9 +1,8 @@
+streamlit
 langchain-community
 langchain-core
 langchain-ollama
 langchain-text-splitters
 langchain-chroma
-chromadb[all]  # Ensure this installs all ChromaDB dependencies
+chromadb[all]
 pysqlite3-binary
-langchain-community-vectorstores-faiss
-streamlit
