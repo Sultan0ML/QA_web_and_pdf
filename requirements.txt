@@ -1,5 +1,6 @@
-langchain-community
-langchain-ollama
-langchain-core
-langchain-community-vectorstores-faiss
-streamlit
+langchain-community>=0.1.0
+langchain-ollama>=0.1.0
+langchain-core>=0.1.0
+langchain-text-splitters>=0.1.0
+langchain-community-vectorstores-faiss>=0.1.0
+streamlit>=1.22.0
