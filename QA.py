@@ -10,14 +10,14 @@ from langchain_core.documents import Document
 
 def scrap_data(url):
     """Scrape data from the given URL."""
-    loaders = AsyncChromiumLoader([url], user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+    loaders = AsyncChromiumLoader([url])
     docs = loaders.load()
 
     bs_transformer = BeautifulSoupTransformer()
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
 
     # Return a list of Document objects
-    return [Document(page_content=doc.page_content) for doc in docs_transformed] if docs_transformed else []
+    return [Document(page_content=doc[0].page_content) for doc in docs_transformed] if docs_transformed else []
 
 def store_in_vector_space(docs):
     """Store the scraped content in a vector database."""
