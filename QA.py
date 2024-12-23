@@ -79,7 +79,6 @@ def ask_question(vector_db, query):
 
     return response
 
-# Streamlit App
 import streamlit as st
 from langchain_core.documents import Document
 
@@ -124,7 +123,7 @@ else:
     st.success("Data is already scraped and stored!")
 
 # User can ask questions if the data is available
-if 'vector_db' in st.session_state and vector_db is not None:
+if vector_db is not None:
     question = st.text_input("Ask a question about the article")
 
     if question:
@@ -134,4 +133,5 @@ if 'vector_db' in st.session_state and vector_db is not None:
                 st.text_area("Answer", answer, height=200)
             except Exception as e:
                 st.error(f"Error generating response: {e}")
-
+else:
+    st.warning("Please scrape and store the data first by entering the URL.")
