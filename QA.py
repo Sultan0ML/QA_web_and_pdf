@@ -21,7 +21,7 @@ def scrap_data(url):
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
 
     # Return a list of Document objects
-    return [Document(page_content=doc) for doc in docs_transformed[0]].page_content if docs_transformed else []
+    return [Document(page_content=doc) for doc in docs_transformed[0].page_content] if docs_transformed else []
 
 def store_in_vector_space(docs):
     """Store the scraped content in a vector database."""
