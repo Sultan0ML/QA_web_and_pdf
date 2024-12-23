@@ -88,7 +88,7 @@ url = st.sidebar.text_input("Enter article URL")
 if url:
     with st.spinner("Scraping data from the URL..."):
         try:
-            docs = scrape_data(url)  # Ensure scrape_data function is defined elsewhere
+            docs = scrap_data(url)  # Ensure scrape_data function is defined elsewhere
             docs = [Document(page_content=docs)]  # Create Document instance (ensure docs is the correct content)
         except Exception as e:
             st.error(f"Error scraping data: {e}")
