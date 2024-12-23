@@ -78,6 +78,7 @@ if url:
     with st.spinner("Scraping data from the URL..."):
         try:
             docs = scrap_data(url)
+            print(docs)
         except Exception as e:
             st.error(f"Error scraping data: {e}")
             docs = []
