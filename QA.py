@@ -23,8 +23,9 @@ def scrap_data(url):
     docs_transformed = bs_transformer.transform_documents(docs, tags_to_extract=["p"])
 
     # Return a list of Document objects
-    return docs_transformed[0]
+    return docs_transformed[0].page_content
 
+# Step 2: Store the article in vector space
 def store_in_vector_space(docs):
     """Store the scraped content in a vector database."""
     embeddings = OllamaEmbeddings(model="llama3.1")
@@ -43,6 +44,7 @@ def store_in_vector_space(docs):
     vectorStore.save_local('faiss.index')
     
     return vectorStore
+
 
 def ask_question(vector_db, query):
     """Answer user questions based on the vector database."""
@@ -78,7 +80,7 @@ if url:
     with st.spinner("Scraping data from the URL..."):
         try:
             docs = scrap_data(url)
-            print(docs)
+            docs = [Document(page_content=docs)]
         except Exception as e:
             st.error(f"Error scraping data: {e}")
             docs = []
