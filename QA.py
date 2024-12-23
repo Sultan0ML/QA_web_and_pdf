@@ -28,22 +28,26 @@ def scrap_data(url):
 # Step 2: Store the article in vector space
 def store_in_vector_space(docs):
     """Store the scraped content in a vector database."""
-    embeddings = OllamaEmbeddings(model="llama3.1")
+    try:
+        embeddings = OllamaEmbeddings(model="llama3.1")
 
-    # Split the text into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = []
-    for doc in docs:
-        chunks.extend(text_splitter.split_text(doc.page_content))
+        # Split the text into chunks
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = []
+        for doc in docs:
+            chunks.extend(text_splitter.split_text(doc.page_content))
 
-    # Wrap each chunk into a Document object
-    documents = [Document(page_content=chunk) for chunk in chunks]
+        # Wrap each chunk into a Document object
+        documents = [Document(page_content=chunk) for chunk in chunks]
 
-    # Create FAISS DB
-    vectorStore = FAISS.from_documents(documents=documents, embedding=embeddings)
-    vectorStore.save_local('faiss.index')
-    
-    return vectorStore
+        # Create FAISS DB
+        vectorStore = FAISS.from_documents(documents=documents, embedding=embeddings)
+        vectorStore.save_local('faiss.index')
+        return vectorStore
+
+    except Exception as e:
+        print(f"Error storing data in vector space: {e}")
+        return None
 
 
 def ask_question(vector_db, query):
