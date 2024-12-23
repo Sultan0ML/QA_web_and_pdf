@@ -75,7 +75,7 @@ url = st.sidebar.text_input("Enter article URL")
 if url:
     with st.spinner("Scraping data from the URL..."):
         try:
-            docs = asyncio.run(scrap_data(url))
+            docs = scrap_data(url)
         except Exception as e:
             st.error(f"Error scraping data: {e}")
             docs = []
