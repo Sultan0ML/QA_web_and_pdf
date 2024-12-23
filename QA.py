@@ -1,4 +1,3 @@
-import asyncio
 from langchain_community.document_loaders import AsyncChromiumLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_ollama.llms import OllamaLLM
@@ -31,8 +30,8 @@ def store_in_vector_space(docs):
     try:
         embeddings = OllamaEmbeddings(model="llama3.1")
 
-        # Split the text into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        # Split the text into smaller chunks to preserve more context
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)  # Smaller chunks
         chunks = []
         for doc in docs:
             chunks.extend(text_splitter.split_text(doc.page_content))
@@ -43,6 +42,12 @@ def store_in_vector_space(docs):
         # Create FAISS DB
         vectorStore = FAISS.from_documents(documents=documents, embedding=embeddings)
         vectorStore.save_local('faiss.index')
+        
+        # Print stored documents for debugging
+        print("Stored documents in the vector store:")
+        for doc in documents[:5]:  # Print the first 5 documents for debugging
+            print(doc.page_content)
+
         return vectorStore
 
     except Exception as e:
@@ -75,41 +80,58 @@ def ask_question(vector_db, query):
     return response
 
 # Streamlit App
+import streamlit as st
+from langchain_core.documents import Document
+
+# Assuming functions like `scrap_data`, `store_in_vector_space`, and `ask_question` are defined elsewhere.
+
 st.title("Ask Questions from a Web Article")
 
 # Move URL input to sidebar
 url = st.sidebar.text_input("Enter article URL")
 
-if url:
-    with st.spinner("Scraping data from the URL..."):
-        try:
-            docs = scrap_data(url)
-            docs = [Document(page_content=docs)]
-        except Exception as e:
-            st.error(f"Error scraping data: {e}")
-            docs = []
-
-    if docs:
-        st.success("Data scraped successfully!")
-        
-        # Store in vector space
-        with st.spinner("Storing data in vector space..."):
+# Check if data already exists in session state
+if 'docs' not in st.session_state or 'vector_db' not in st.session_state:
+    # Data is not available, scrape and store it
+    if url:
+        with st.spinner("Scraping data from the URL..."):
             try:
-                vector_db = store_in_vector_space(docs)
-                st.success("Data stored in vector space!")
+                docs = scrap_data(url)
+                docs = [Document(page_content=docs)]
+                st.session_state.docs = docs  # Store in session state
             except Exception as e:
-                st.error(f"Error storing data in vector space: {e}")
-                vector_db = None
+                st.error(f"Error scraping data: {e}")
+                docs = []
 
-        # User can ask questions
-        question = st.text_input("Ask a question about the article")
-
-        if question:
-            with st.spinner("Generating response..."):
+        if docs:
+            st.success("Data scraped successfully!")
+            
+            # Store in vector space
+            with st.spinner("Storing data in vector space..."):
                 try:
-                    answer = ask_question(vector_db, question)
-                    st.text_area("Answer", answer, height=200)
+                    vector_db = store_in_vector_space(docs)
+                    st.session_state.vector_db = vector_db  # Store in session state
+                    st.success("Data stored in vector space!")
                 except Exception as e:
-                    st.error(f"Error generating response: {e}")
-    else:
-        st.error("Failed to scrape the content. Please check the URL.")
+                    st.error(f"Error storing data in vector space: {e}")
+                    vector_db = None
+        else:
+            st.error("Failed to scrape the content. Please check the URL.")
+else:
+    # Data is already available, use the stored data
+    docs = st.session_state.docs
+    vector_db = st.session_state.vector_db
+    st.success("Data is already scraped and stored!")
+
+# User can ask questions if the data is available
+if 'vector_db' in st.session_state and vector_db is not None:
+    question = st.text_input("Ask a question about the article")
+
+    if question:
+        with st.spinner("Generating response..."):
+            try:
+                answer = ask_question(vector_db, question)
+                st.text_area("Answer", answer, height=200)
+            except Exception as e:
+                st.error(f"Error generating response: {e}")
+
