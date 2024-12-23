@@ -100,7 +100,7 @@ if url:
             except Exception as e:
                 st.error(f"Error storing data in vector space: {e}")
                 vector_db = None
-    if vector_db is not None:
+                
         # User can ask questions
         question = st.text_input("Ask a question about the article")
 
