@@ -11,6 +11,8 @@ from langchain_core.documents import Document
 import os
 
 os.system("playwright install")  # Make sure the necessary dependencies are installed
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
 
 def scrap_data(url):
     """Scrape data from the given URL."""
@@ -91,7 +93,7 @@ if url:
             except Exception as e:
                 st.error(f"Error storing data in vector space: {e}")
                 vector_db = None
-
+    if vector_db is not None:
         # User can ask questions
         question = st.text_input("Ask a question about the article")
 
