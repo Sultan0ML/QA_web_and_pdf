@@ -7,3 +7,6 @@ langchain-chroma
 playwright
 beautifulsoup4
 chromadb
+pinecone
+langchain-pinecone
+pinecone-notebooks

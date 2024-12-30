@@ -7,6 +7,7 @@ from langchain.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import Chroma
+from pinecone import Pinecone, ServerlessSpec
 import os
 
 # Install necessary dependencies for Playwright
@@ -14,6 +15,7 @@ os.system("playwright install")
 
 # Ensure FAISS compatibility
 os.environ['FAISS_NO_AVX2'] = '1'
+os.environ["PINECONE_API_KEY"]=os.getenv("PINECONE_API_KEY")
 
 # Initialize session state
 if 'docs' not in st.session_state:
@@ -42,6 +44,23 @@ def scrap_data(url):
 def store_in_vector_space(docs):
     """Store the scraped content in a vector database (ChromaDB)."""
     try:
+        import time
+
+        index_name = "langchain-test-index"  # change if desired
+
+        existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+
+        if index_name not in existing_indexes:
+            pc.create_index(
+                name=index_name,
+                dimension=3072,
+                metric="cosine",
+                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+            )
+            while not pc.describe_index(index_name).status["ready"]:
+                time.sleep(1)
+
+        index = pc.Index(index_name)
         # Initialize embeddings and text splitter
         embeddings = OllamaEmbeddings(model="llama3.1")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
