@@ -49,7 +49,7 @@ def store_in_vector_space(docs):
         
         documents = [Document(page_content=chunk) for chunk in chunks]
         vector_store = FAISS.from_documents(documents=documents, embedding=embeddings)
-        vector_store.save_local('faiss.index')
+        vector_store.save_local('index.faiss')
         
         return vector_store
     except Exception as e:
@@ -91,6 +91,7 @@ if st.session_state.docs is None or st.session_state.vector_db is None:
                 docs = [Document(page_content=docs)]
                 st.session_state.docs = docs
                 st.success("Data scraped successfully!")
+                st.write(docs)
             except Exception as e:
                 st.error(f"Error scraping data: {e}")
                 docs = []
