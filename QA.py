@@ -3,10 +3,10 @@ from langchain_community.document_loaders import AsyncChromiumLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import PromptTemplate
-from langchain_ollama.embeddings import OllamaEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores.faiss import FAISS
-from langchain_core.documents import Document
+from langchain.embeddings import OllamaEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+from langchain.vectorstores import Chroma
 import os
 
 # Install necessary dependencies for Playwright
@@ -37,23 +37,31 @@ def scrap_data(url):
         raise RuntimeError(f"Failed to scrape data: {e}")
 
 # Step 2: Store the article in vector space
+
+
 def store_in_vector_space(docs):
-    """Store the scraped content in a vector database."""
+    """Store the scraped content in a vector database (ChromaDB)."""
     try:
+        # Initialize embeddings and text splitter
         embeddings = OllamaEmbeddings(model="llama3.1")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
         
+        # Split the documents into chunks
         chunks = []
         for doc in docs:
             chunks.extend(text_splitter.split_text(doc.page_content))
         
+        # Create Document objects
         documents = [Document(page_content=chunk) for chunk in chunks]
-        vector_store = FAISS.from_documents(documents=documents, embedding=embeddings)
-        vector_store.save_local('index.faiss')
+        
+        # Initialize and populate ChromaDB
+        vector_store = Chroma.from_documents(documents=documents, embedding=embeddings, persist_directory="./chroma_db")
+        vector_store.persist()  # Save the Chroma database locally
         
         return vector_store
     except Exception as e:
         raise RuntimeError(f"Failed to store data in vector space: {e}")
+
 
 # Step 3: Answer questions based on vector database
 def ask_question(vector_db, query):
