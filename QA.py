@@ -6,7 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 import os
 
 # Install necessary dependencies for Playwright
