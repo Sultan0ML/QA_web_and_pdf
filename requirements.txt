@@ -3,10 +3,8 @@ langchain-community
 langchain-core
 langchain-ollama
 langchain-text-splitters
-langchain-chroma
 playwright
 beautifulsoup4
-chromadb
 pinecone
 langchain-pinecone
 pinecone-notebooks
