@@ -6,8 +6,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
-from langchain_community.vectorstores import Chroma
-from pinecone import Pinecone, ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone
+
 import os
 
 # Install necessary dependencies for Playwright
@@ -42,44 +43,25 @@ def scrap_data(url):
 
 
 def store_in_vector_space(docs):
-    """Store the scraped content in a vector database (ChromaDB)."""
-    try:
-        import time
 
-        index_name = "langchain-test-index"  # change if desired
-
-        existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
-
-        if index_name not in existing_indexes:
-            pc.create_index(
-                name=index_name,
-                dimension=3072,
-                metric="cosine",
-                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-            )
-            while not pc.describe_index(index_name).status["ready"]:
-                time.sleep(1)
-
-        index = pc.Index(index_name)
-        # Initialize embeddings and text splitter
-        embeddings = OllamaEmbeddings(model="llama3.1")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
+    os.environ["PINECONE_API_KEY"]=os.getenv("PINECONE_API_KEY")
+    embeddings=OllamaEmbeddings(model="llama3.1")
+    pc = Pinecone()
+    index = pc.Index("web-pdf")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
         
         # Split the documents into chunks
-        chunks = []
-        for doc in docs:
-            chunks.extend(text_splitter.split_text(doc.page_content))
+    chunks = []
+    for doc in docs:
+        chunks.extend(text_splitter.split_text(doc.page_content))
         
         # Create Document objects
-        documents = [Document(page_content=chunk) for chunk in chunks]
-        
-        # Initialize and populate ChromaDB
-        vector_store = Chroma.from_documents(documents=documents, embedding=embeddings, persist_directory="./chroma_db")
-        vector_store.persist()  # Save the Chroma database locally
-        
-        return vector_store
-    except Exception as e:
-        raise RuntimeError(f"Failed to store data in vector space: {e}")
+    documents = [Document(page_content=chunk) for chunk in chunks]
+
+    vector_store = PineconeVectorStore(embedding=embeddings, index=index)
+    for document in documents:
+        vector_store.add_texts([document.page_content])
+    return vector_store
 
 
 # Step 3: Answer questions based on vector database
