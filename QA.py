@@ -6,8 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
-from langchain_pinecone import PineconeVectorStore
-from pinecone import Pinecone
+import chromadb
 
 import os
 
@@ -42,26 +41,62 @@ def scrap_data(url):
 # Step 2: Store the article in vector space
 
 
-def store_in_vector_space(docs):
+# Step 2: Store the article in vector space
 
-    os.environ["PINECONE_API_KEY"]=os.getenv("PINECONE_API_KEY")
-    embeddings=OllamaEmbeddings(model="llama3.1")
-    pc = Pinecone()
-    index = pc.Index("web-pdf")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
+
+# def store_in_vector_space(docs):
+
+#     os.environ["PINECONE_API_KEY"]=os.getenv("PINECONE_API_KEY")
+#     embeddings=OllamaEmbeddings(model="llama3.1")
+#     pc = Pinecone()
+#     index = pc.Index("web-pdf")
+#     text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
         
-        # Split the documents into chunks
+#         # Split the documents into chunks
+#     chunks = []
+#     for doc in docs:
+#         chunks.extend(text_splitter.split_text(doc.page_content))
+        
+#         # Create Document objects
+#     documents = [Document(page_content=chunk) for chunk in chunks]
+
+#     vector_store = PineconeVectorStore(embedding=embeddings, index=index)
+#     for document in documents:
+#         vector_store.add_texts([document.page_content])
+#     return vector_store
+
+def store_in_vector_space(docs):
+    # Initialize ChromaDB client
+    client = chromadb.Client()
+    
+    # Use or create a collection in ChromaDB
+    collection_name = "chroma_docs"
+    collection = client.get_or_create_collection(name=collection_name)
+    
+    # Use the embedding model (assuming OllamaEmbeddings is compatible)
+    embeddings = OllamaEmbeddings(model="llama3.1")
+    
+    # Split the documents into chunks
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=20)
     chunks = []
     for doc in docs:
         chunks.extend(text_splitter.split_text(doc.page_content))
-        
-        # Create Document objects
+    
+    # Prepare data for ChromaDB insertion
     documents = [Document(page_content=chunk) for chunk in chunks]
-
-    vector_store = PineconeVectorStore(embedding=embeddings, index=index)
-    for document in documents:
-        vector_store.add_texts([document.page_content])
-    return vector_store
+    
+    # Store embeddings and documents in ChromaDB
+    for doc in documents:
+        # Generate embedding for each document chunk
+        vector = embeddings.embed(doc.page_content)
+        # Add the document with the embedding to the ChromaDB collection
+        collection.add(
+            documents=[doc.page_content], 
+            embeddings=[vector], 
+            ids=[str(hash(doc.page_content))]
+        )
+        
+    return collection
 
 
 # Step 3: Answer questions based on vector database
